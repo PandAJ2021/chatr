@@ -1,5 +1,6 @@
 from django import forms
 from .models import User
+import re
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
@@ -16,8 +17,8 @@ class UserCreationForm(forms.ModelForm):
         fields = ['username', 'phone_number', 'email']
     
     def clean_password2(self):
-        password1 = self.cleaned_data['password1']
-        password2 = self.cleaned_data['password2']
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
 
         if not password1 or not password2:
             raise forms.ValidationError('Both password fields are required.')
@@ -28,6 +29,12 @@ class UserCreationForm(forms.ModelForm):
         validate_password(password2)
 
         return password2
+    
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data.get('phone_number')
+        if not re.fullmatch('09\d{9}', phone_number):
+            raise forms.ValidationError('Number is not Valid.')
+        return phone_number
     
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -46,3 +53,9 @@ class UserChangeForm(forms.ModelForm):
     
     def clean_password(self):
         return self.initial.get('password')
+    
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data.get('phone_number')
+        if not re.fullmatch('09\d{9}', phone_number):
+            raise forms.ValidationError('Number is not Valid.')
+        return phone_number
