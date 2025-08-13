@@ -1,6 +1,6 @@
 from django import forms
 from .models import User
-import re
+from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
@@ -30,12 +30,6 @@ class UserCreationForm(forms.ModelForm):
 
         return password2
     
-    def clean_phone_number(self):
-        phone_number = self.cleaned_data.get('phone_number')
-        if not re.fullmatch('09\d{9}', phone_number):
-            raise forms.ValidationError('Number is not Valid.')
-        return phone_number
-    
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password1'])
@@ -54,8 +48,19 @@ class UserChangeForm(forms.ModelForm):
     def clean_password(self):
         return self.initial.get('password')
     
-    def clean_phone_number(self):
-        phone_number = self.cleaned_data.get('phone_number')
-        if not re.fullmatch('09\d{9}', phone_number):
-            raise forms.ValidationError('Number is not Valid.')
-        return phone_number
+
+class UserLoginForm(forms.Form):
+    phone_number = forms.CharField(max_length=11)
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        phone_number = cleaned_data.get('phone_number')
+        password = cleaned_data.get('password')
+
+        if phone_number and password:
+            user = authenticate(phone_number=phone_number, password=password)
+            if not user:
+                raise forms.ValidationError('Invalid phone number or password.')
+            cleaned_data['user'] = user
+        return cleaned_data
