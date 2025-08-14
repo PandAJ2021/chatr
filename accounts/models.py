@@ -20,3 +20,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    name = models.CharField(max_length=255, blank=True, null=True, verbose_name='First Name')
+    surname = models.CharField(max_length=255, blank=True, null=True)
+    image = models.ImageField(upload_to='accounts/profile_images/', null=True, blank=True, verbose_name='Profile Image')
+    bio = models.TextField(verbose_name='Biography', null=True, blank=True)
+
+    @property
+    def get_rooms(self):
+        return self.user.memberships.all()
