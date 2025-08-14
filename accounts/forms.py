@@ -1,5 +1,5 @@
 from django import forms
-from .models import User
+from .models import User, UserProfile
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
@@ -64,3 +64,10 @@ class UserLoginForm(forms.Form):
                 raise forms.ValidationError('Invalid phone number or password.')
             cleaned_data['user'] = user
         return cleaned_data
+
+
+class UserProfileForm(forms.ModelForm):
+
+    class Meta:
+        model = UserProfile
+        fields = ['name', 'surname', 'image', 'bio']
