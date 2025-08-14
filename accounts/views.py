@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from .models import User
+from .models import User, UserProfile
 from django.contrib import messages
 from django.views import View
-from .forms import UserCreationForm, UserLoginForm
+from .forms import UserCreationForm, UserLoginForm, UserProfileForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -23,7 +23,7 @@ class UserRegisterView(View):
         if form.is_valid():
             form.save()
             messages.success(request, 'You have registered successfully.', 'success')
-            return redirect('accounts:home')
+            return redirect('home')
         
         messages.error(request, 'Form is not valid.', 'danger') 
         return render(request, self.template_name, {'form':form}) 
@@ -35,7 +35,7 @@ class UserLoginView(View):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect('accounts:home')
+            return redirect('home')
         return super().dispatch(request, *args, **kwargs)
 
     def get(self, request):
@@ -47,8 +47,8 @@ class UserLoginView(View):
         if form.is_valid():
             user = form.cleaned_data['user']
             login(request, user=user)
-            messages.success(request, 'You have logged in successfully')
-            return redirect('accounts:home')
+            messages.success(request, 'You have logged in successfully', 'success')
+            return redirect('home')
         return render(request, self.template_name, {'form':form})
 
 
@@ -56,4 +56,32 @@ class UserLogOutView(LoginRequiredMixin, View):
     def get(self, request):
         logout(request)
         messages.success(request, 'You have logged out successfully.', 'success')
-        return redirect('accounts:home')
+        return redirect('home')
+
+
+class UserEditProfileView(LoginRequiredMixin, View):
+    form_class = UserProfileForm
+    template_name = 'accounts/edit_profile.html'
+
+    def setup(self, request, *args, **kwargs):
+        self.profile = UserProfile.objects.get(user=request.user)
+        return super().setup(request, *args, **kwargs)
+
+    def get(self, request):
+        form = self.form_class(instance=self.profile)
+        return render(request, self.template_name, {'form':form})
+    
+    def post(self, request):
+        form = self.form_class(request.POST, request.FILES, instance=self.profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile successfully Edited.', 'success')
+            return redirect('accounts:user_profile')
+        return render(request, self.template_name, {'form':form})
+    
+
+class UserProfileView(LoginRequiredMixin, View):
+    template_name = 'accounts/profile.html'
+
+    def get(self, request):
+        return render(request, self.template_name)
